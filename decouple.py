@@ -181,6 +181,31 @@ class RepositoryEnv(RepositoryEmpty):
         return self.data[key]
 
 
+class RepositorySSM(RepositoryEmpty):
+    """
+    Retrieves option keys from AWS SSM Parameter Store with fall back to os.environ.
+    """
+
+    def __init__(self, namespace):
+        self.data = {}
+        import boto3
+
+        region_name = os.environ.get("AWS_REGION", "us-east-1")
+        ssm = boto3.client("ssm", region_name=region_name)
+        paginator = ssm.get_paginator("get_parameters_by_path")
+        for page in paginator.paginate(Path=namespace, Recursive=True):
+            for param in page["Parameters"]:
+                k = param["Name"].split("/")[-1]
+                v = param["Value"]
+                self.data[k] = v
+
+    def __contains__(self, key):
+        return key in os.environ or key in self.data
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+
 class RepositorySecret(RepositoryEmpty):
     """
     Retrieves option keys from files,
