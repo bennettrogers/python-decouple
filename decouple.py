@@ -193,7 +193,9 @@ class RepositorySSM(RepositoryEmpty):
         region_name = os.environ.get("AWS_REGION", "us-east-1")
         ssm = boto3.client("ssm", region_name=region_name)
         paginator = ssm.get_paginator("get_parameters_by_path")
-        for page in paginator.paginate(Path=namespace, Recursive=True):
+        for page in paginator.paginate(
+            Path=namespace, Recursive=True, WithDecryption=True
+        ):
             for param in page["Parameters"]:
                 k = param["Name"].split("/")[-1]
                 v = param["Value"]
